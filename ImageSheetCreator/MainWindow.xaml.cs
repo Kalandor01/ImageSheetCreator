@@ -1,11 +1,12 @@
 ﻿using Microsoft.Win32;
-using System.IO;
-using System.Windows;
-using System.Drawing;
 using System;
+using System.Collections.ObjectModel;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Windows.Media.Media3D;
+using System.IO;
+using System.Linq;
+using System.Windows;
 
 namespace ImageSheetCreator
 {
@@ -25,7 +26,6 @@ namespace ImageSheetCreator
         private int imagesInRow;
         private double aspectRatio;
         private int imageLimit;
-        private Image? targetImage;
         #endregion
 
         #region Public properies
@@ -83,7 +83,7 @@ namespace ImageSheetCreator
             }
         }
 
-        public string TargetImagePath
+        public string ImagePath
         {
             get
             {
@@ -93,7 +93,7 @@ namespace ImageSheetCreator
             {
                 try
                 {
-                    targetImage = Image.FromFile(value);
+                    Image.FromFile(value);
                 }
                 catch (Exception)
                 {
@@ -102,6 +102,11 @@ namespace ImageSheetCreator
                 _targetImagePath = value;
             }
         }
+
+        public ObservableCollection<ImageData> Images { get; set; }
+        public bool IsEnabledAddImageButton { get => !string.IsNullOrEmpty(ImagePath); }
+        public bool IsEnabledRemoveImageButton { get => imageList.SelectedIndex != -1; }
+        public bool IsEnabledCreateImageSheetButton { get => Images.Any(); }
         #endregion
 
         #region Public constructors
@@ -111,16 +116,17 @@ namespace ImageSheetCreator
             ImagesInRow = "1";
             AspectRatio = (297 / 210.0).ToString();
             ImageLimit = "";
-            TargetImagePath = "";
-            targetImage = null;
+            ImagePath = "";
+            Images = new ObservableCollection<ImageData>();
 
             InitializeComponent();
             DataContext = this;
         }
         #endregion
 
-        #region Public methods
-        private void SelectTargetImage(object sender, RoutedEventArgs e)
+        #region Commands
+
+        private void SelectImageCommand(object sender, RoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog
             {
@@ -128,14 +134,41 @@ namespace ImageSheetCreator
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                TargetImagePath = openFileDialog.FileName;
+                ImagePath = openFileDialog.FileName;
             }
-            targetImageTextBox.Text = TargetImagePath;
+            ImagePathTextBox.Text = ImagePath;
+            addImageButton.IsEnabled = IsEnabledAddImageButton;
+        }
+
+        private void AddImageCommand(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Image.FromFile(ImagePath);
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            Images.Add(new ImageData(ImagePath, imageLimit));
+            createImageSheetButton.IsEnabled = IsEnabledCreateImageSheetButton;
+        }
+
+        private void RemoveImageCommand(object sender, RoutedEventArgs e)
+        {
+            if (imageList.SelectedIndex == -1)
+            {
+                return;
+            }
+
+            Images.RemoveAt(imageList.SelectedIndex);
+            createImageSheetButton.IsEnabled = IsEnabledCreateImageSheetButton;
         }
 
         private void CreateImageSheetCommand(object sender, RoutedEventArgs e)
         {
-            if (targetImage is null)
+            if (!Images.Any())
             {
                 return;
             }
@@ -145,36 +178,46 @@ namespace ImageSheetCreator
                 aspectRatio = 1 / aspectRatio;
             }
 
-            // calculate sizes    
-            var imageSize = targetImage.Size;
+            // correct image aspect ratios
+            (int width, int height) biggestSize = (0, 0);
 
-            var fullWidth = imageSize.Width * imagesInRow;
-            var fullHeight = imageSize.Height * imagesInColumn;
-
-
-            var rawAspectRatio = fullHeight / (fullWidth * 1.0);
-
-            (int width, int height) finalSize = (1, 1);
-
-            if (rawAspectRatio != aspectRatio)
+            foreach (var targetImage in Images)
             {
-                if (rawAspectRatio > aspectRatio)
+                var image = targetImage.Image;
+
+                var fullWidth = image.Width * imagesInRow;
+                var fullHeight = image.Height * imagesInColumn;
+
+
+                var rawAspectRatio = fullHeight / (fullWidth * 1.0);
+
+                (int width, int height) correctedSize = (0, 0);
+
+                if (rawAspectRatio != aspectRatio)
                 {
-                    finalSize = (imageSize.Width, (int)Math.Round(imageSize.Height / (rawAspectRatio / aspectRatio)));
-                }
-                else
-                {
-                    finalSize = ((int)Math.Round(imageSize.Width / (aspectRatio / rawAspectRatio)), imageSize.Height);
+                    if (rawAspectRatio > aspectRatio)
+                    {
+                        correctedSize = (image.Width, (int)Math.Round(image.Height / (rawAspectRatio / aspectRatio)));
+                    }
+                    else
+                    {
+                        correctedSize = ((int)Math.Round(image.Width / (aspectRatio / rawAspectRatio)), image.Height);
+                    }
                 }
 
-                fullWidth = finalSize.width * imagesInRow;
-                fullHeight = finalSize.height * imagesInColumn;
+                if (correctedSize.width > biggestSize.width)
+                {
+                    biggestSize = correctedSize;
+                }
             }
 
-            // make img
-            var destImage = new Bitmap(fullWidth, fullHeight);
+            (int width, int height) = (biggestSize.width * imagesInRow, biggestSize.height * imagesInColumn);
 
-            destImage.SetResolution(targetImage.HorizontalResolution, targetImage.VerticalResolution);
+            // make img
+            var imageIndex = 0;
+            var currentImage = Images[imageIndex];
+
+            var destImage = new Bitmap(width, height);
 
             using (var graphics = Graphics.FromImage(destImage))
             {
@@ -184,31 +227,49 @@ namespace ImageSheetCreator
                 graphics.SmoothingMode = SmoothingMode.HighQuality;
                 graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                var imageNum = 0;
                 var wrapMode = new ImageAttributes();
                 wrapMode.SetWrapMode(WrapMode.TileFlipXY);
+
+                var imageNum = 0;
+
                 for (int y = 0; y < imagesInColumn; y++)
                 {
                     for (int x = 0; x < imagesInRow; x++)
                     {
-                        var destRect = new Rectangle(x * finalSize.width, y * finalSize.height, finalSize.width, finalSize.height);
-                        graphics.DrawImage(targetImage, destRect, 0, 0, targetImage.Width, targetImage.Height, GraphicsUnit.Pixel, wrapMode);
-                        if (imageLimit > 0)
+                        var destRect = new Rectangle(x * biggestSize.width, y * biggestSize.height, biggestSize.width, biggestSize.height);
+                        graphics.DrawImage(currentImage.Image, destRect, 0, 0, currentImage.Image.Width, currentImage.Image.Height, GraphicsUnit.Pixel, wrapMode);
+                        if (currentImage.Limit > 0)
                         {
                             imageNum++;
-                            if (imageNum >= imageLimit)
+                            if (imageNum >= currentImage.Limit)
                             {
-                                break;
+                                imageIndex++;
+                                if (imageIndex >= Images.Count)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    imageNum = 0;
+                                    currentImage = Images[imageIndex];
+                                }
                             }
                         }
                     }
-                    if (imageLimit > 0 && imageNum >= imageLimit)
+                    if (imageIndex >= Images.Count)
                     {
                         break;
                     }
                 }
             }
-            destImage.Save("tiled_image.png");
+            destImage.Save("címke kép.png", ImageFormat.Png);
+        }
+        #endregion
+
+        #region Private methods
+        private void imageList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            removeImageButton.IsEnabled = IsEnabledRemoveImageButton;
         }
         #endregion
     }
