@@ -6,19 +6,19 @@
         xmlns:local="clr-namespace:ImageSheetCreator"
         d:DataContext="{d:DesignInstance Type=local:MainWindow}"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Cimke lap készítő" Height="450" Width="800">
     <Grid>
-        <CheckBox x:Name="flipAspectRatioCheckBox" Content="Flip aspect ratio" HorizontalAlignment="Left" Margin="329,294,0,0" VerticalAlignment="Top" IsChecked="{Binding FlipAspectRatio, Mode=TwoWay}"/>
-        <Label x:Name="imagesInRowLabel" Content="Number of images in a row:" HorizontalAlignment="Left" Margin="173,195,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="imagesInColumnLabel" Content="Number of images in a column:" HorizontalAlignment="Left" Margin="153,229,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="aspectRatioLabel" Content="Aspect ratio:" HorizontalAlignment="Left" Margin="253,260,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="imageLimitLabel" Content="Image limit:" HorizontalAlignment="Left" Margin="257,321,0,0" VerticalAlignment="Top"/>
+        <CheckBox x:Name="flipAspectRatioCheckBox" Content="Képarány megfordítása" HorizontalAlignment="Left" Margin="329,294,0,0" VerticalAlignment="Top" IsChecked="{Binding FlipAspectRatio, Mode=TwoWay}"/>
+        <Label x:Name="imagesInRowLabel" Content="Képek száma egy sorban:" HorizontalAlignment="Left" Margin="173,195,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="imagesInColumnLabel" Content="Képek száma egy oszlopban:" HorizontalAlignment="Left" Margin="153,229,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="aspectRatioLabel" Content="Képarány:" HorizontalAlignment="Left" Margin="253,260,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="imageLimitLabel" Content="Kép limit:" HorizontalAlignment="Left" Margin="257,321,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="imagesInColumnTextBox" HorizontalAlignment="Left" Margin="329,233,0,0" MinWidth="120" TextWrapping="Wrap" Text="{Binding ImagesInColumn, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="imagesInRowTextBox" HorizontalAlignment="Left" Margin="329,199,0,0" MinWidth="120" TextWrapping="Wrap" Text="{Binding ImagesInRow, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="aspectRatioTextBox" HorizontalAlignment="Left" Margin="329,263,0,0" MinWidth="120" TextWrapping="Wrap" Text="{Binding AspectRatio, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="imaheLimitTextBox" HorizontalAlignment="Left" Margin="329,325,0,0" MinWidth="120" TextWrapping="Wrap" Text="{Binding ImageLimit, Mode=TwoWay}" VerticalAlignment="Top" Width="120"/>
         <TextBox x:Name="targetImageTextBox" HorizontalAlignment="Left" MinWidth="120" TextWrapping="Wrap" Text="{Binding TargetImagePath, Mode=OneWay}" VerticalAlignment="Top" Width="200" Margin="329,40,0,0" IsEnabled="False"/>
-        <Button x:Name="selectTargetImageButton" Content="Select image" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SelectTargetImage" Margin="227,39,0,0"/>
-        <Button x:Name="createImageSheetButton" Content="Create image sheet" HorizontalAlignment="Left" Margin="539,346,0,0" VerticalAlignment="Top" Click="CreateImageSheetCommand"/>
+        <Button x:Name="selectTargetImageButton" Content="Kép kiválasztása" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SelectTargetImage" Margin="227,39,0,0"/>
+        <Button x:Name="createImageSheetButton" Content="Kép készítése" HorizontalAlignment="Left" Margin="539,346,0,0" VerticalAlignment="Top" Click="CreateImageSheetCommand"/>
     </Grid>
 </Window>
