@@ -16,7 +16,7 @@ namespace ImageSheetCreator
             Image = Image.FromFile(Path);
             FileName = System.IO.Path.GetFileName(Path);
             Limit = limit;
-            DisplayLimit = limit < 1 ? "mind" : limit.ToString();
+            DisplayLimit = limit < 1 ? "all" : limit.ToString();
         }
     }
 }
